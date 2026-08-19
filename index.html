@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Family Finance">
+<link rel="manifest" href="manifest.json">
+<title>Family Finance</title>
+<style>
+:root{--p:#0f766e;--p2:#115e59;--bg:#f4f7f8;--card:#fff;--text:#14212b;--muted:#718096;--red:#d94841;--green:#087f5b;--blue:#2563eb;--line:#e5e9ee}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans Bengali",sans-serif}
+.app{max-width:680px;margin:auto;min-height:100vh;padding-bottom:80px}
+.top{padding:20px 18px 28px;color:#fff;background:linear-gradient(145deg,#0f766e,#164e63);border-radius:0 0 28px 28px}
+.toprow{display:flex;justify-content:space-between;align-items:center}.top h1{margin:0;font-size:22px}.top p{margin:5px 0 0;font-size:12px;opacity:.85}
+.iconbtn{background:#ffffff22;color:#fff;border:1px solid #ffffff33;border-radius:12px;padding:9px 11px}
+.balance{margin-top:18px}.balance small{opacity:.8}.balance b{display:block;font-size:31px;margin-top:3px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:-15px 12px 12px;position:relative}.card{background:#fff;border-radius:16px;padding:13px 10px;box-shadow:0 5px 18px #00000012}.card small{color:var(--muted);font-size:11px}.card b{display:block;font-size:17px;margin-top:5px}.green{color:var(--green)}.red{color:var(--red)}.blue{color:var(--blue)}
+.content{padding:0 12px}.screen{display:none}.screen.active{display:block}.panel{background:var(--card);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 2px 12px #0000000a}
+h2{font-size:17px;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.full{grid-column:1/-1}
+label{font-size:11px;color:var(--muted);display:block;margin:7px 0 4px}input,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:14px;outline:none}
+.btn{border:0;border-radius:12px;padding:11px 13px;font-weight:700}.primary{background:var(--p);color:#fff;width:100%;margin-top:10px}.soft{background:#eef7f6;color:var(--p)}.danger{background:#fff1f0;color:#c92a2a}.rowbtn{display:flex;gap:8px}.rowbtn>*{flex:1}
+.tx{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}.tx:last-child{border-bottom:0}.tx b{font-size:13px}.tx small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.amt{font-weight:800;white-space:nowrap}
+.catrow{margin:10px 0}.cathead{display:flex;justify-content:space-between;font-size:12px}.bar{height:8px;background:#e9eef2;border-radius:99px;margin-top:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--p);border-radius:99px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(680px,100%);background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:7px 5px calc(7px + env(safe-area-inset-bottom));z-index:5}.nav button{border:0;background:none;color:#718096;font-size:10px;padding:5px}.nav button span{font-size:20px;display:block}.nav button.active{color:var(--p);font-weight:800}
+.empty{text-align:center;color:#8b95a5;padding:18px}.month{margin-bottom:10px}.badge{display:inline-block;padding:4px 7px;border-radius:99px;background:#eef7f6;color:var(--p);font-size:10px}
+.note{font-size:11px;color:var(--muted);line-height:1.5}
+@media(max-width:390px){.cards{gap:6px}.card{padding:11px 7px}.card b{font-size:15px}.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+ <div class="toprow"><div><h1>💰 Family Finance</h1><p>আপনাদের সংসারের স্মার্ট হিসাব</p></div><button class="iconbtn" onclick="show('settings')">⚙️</button></div>
+ <div class="balance"><small>এই মাসে অবশিষ্ট</small><b id="balance">৳0</b></div>
+</header>
+<div class="cards">
+ <div class="card"><small>মোট আয়</small><b class="green" id="incomeTotal">৳0</b></div>
+ <div class="card"><small>মোট খরচ</small><b class="red" id="expenseTotal">৳0</b></div>
+ <div class="card"><small>সঞ্চয়ের হার</small><b class="blue" id="savingRate">0%</b></div>
+</div>
+<main class="content">
+<section id="home" class="screen active">
+ <div class="panel"><label>মাস</label><input class="month" type="month" id="month" onchange="render()"></div>
+ <div class="panel"><h2>📊 খরচের চিত্র</h2><div id="cats"></div></div>
+ <div class="panel"><h2>🧾 সাম্প্রতিক লেনদেন</h2><div id="recent"></div></div>
+</section>
+
+<section id="add" class="screen">
+ <div class="panel"><h2>➕ নতুন লেনদেন</h2>
+  <div class="rowbtn"><button class="btn soft" id="incomeMode" onclick="setMode('income')">💵 আয়</button><button class="btn" id="expenseMode" onclick="setMode('expense')">🧾 খরচ</button></div>
+  <div class="grid">
+   <div><label>তারিখ</label><input type="date" id="date"></div>
+   <div><label>কে?</label><select id="person"><option>Husband</option><option>Wife</option><option>Joint</option></select></div>
+   <div id="typeBox"><label>আয়ের ধরন</label><select id="type"><option>Salary</option><option>Business</option><option>Other Income</option></select></div>
+   <div id="catBox" style="display:none"><label>ক্যাটাগরি</label><select id="cat"></select></div>
+   <div><label>পরিমাণ</label><input type="number" id="amount" inputmode="decimal" placeholder="৳"></div>
+   <div class="full"><label>বিবরণ</label><input id="note" placeholder="যেমন: August Salary / বাজার"></div>
+  </div>
+  <button class="btn primary" onclick="addTx()">সংরক্ষণ করুন</button>
+ </div>
+</section>
+
+<section id="report" class="screen">
+ <div class="panel"><h2>📈 মাসিক রিপোর্ট</h2><div id="reportBox"></div></div>
+ <div class="panel"><h2>👩‍❤️‍👨 কে কত খরচ করেছেন?</h2><div id="peopleBox"></div></div>
+</section>
+
+<section id="budget" class="screen">
+ <div class="panel"><h2>🎯 মাসিক বাজেট</h2><p class="note">প্রতিটি খাতে আপনার সর্বোচ্চ মাসিক সীমা লিখুন।</p><div id="budgetInputs"></div><button class="btn primary" onclick="saveBudget()">বাজেট সংরক্ষণ</button></div>
+ <div class="panel"><h2>Budget বনাম Actual</h2><div id="budgetReport"></div></div>
+</section>
+
+<section id="settings" class="screen">
+ <div class="panel"><h2>☁️ Backup & Restore</h2>
+  <p class="note">Backup করলে আপনার আয়, খরচ ও বাজেট একটি JSON ফাইলে সংরক্ষণ হবে। নতুন ফোনে Restore করে আগের হিসাব ফেরত আনতে পারবেন।</p>
+  <div class="rowbtn"><button class="btn soft" onclick="backup()">⬇️ Backup</button><button class="btn soft" onclick="document.getElementById('restoreFile').click()">⬆️ Restore</button></div>
+  <input type="file" id="restoreFile" accept=".json,application/json" style="display:none" onchange="restore(event)">
+ </div>
+ <div class="panel"><h2>📱 Home Screen</h2><p class="note">PWA হিসেবে install করার জন্য এই app-টি HTTPS ওয়েবসাইটে রাখতে হবে। তারপর Chrome-এর menu থেকে <b>Add to Home screen / Install app</b> নির্বাচন করুন।</p></div>
+ <div class="panel"><h2>⚠️ ডাটা</h2><button class="btn danger" style="width:100%" onclick="wipe()">সব ডাটা মুছে ফেলুন</button></div>
+</section>
+</main>
+<nav class="nav">
+ <button class="active" onclick="show('home',this)"><span>🏠</span>হোম</button>
+ <button onclick="show('add',this)"><span>➕</span>যোগ করুন</button>
+ <button onclick="show('report',this)"><span>📈</span>রিপোর্ট</button>
+ <button onclick="show('budget',this)"><span>🎯</span>বাজেট</button>
+ <button onclick="show('settings',this)"><span>⚙️</span>সেটিংস</button>
+</nav>
+</div>
+<script>
+const CATS=["বাসা ভাড়া","Family Grocery","Food/Restaurant","যাতায়াত","Electricity/Gas/Water","Mobile/Internet","Medical","Family Support","Personal Shopping","Entertainment","EMI/Loan","Savings/Investment","Others"];
+let db=JSON.parse(localStorage.getItem("ff_v2")||'{"income":[],"expense":[],"budget":{}}');
+let mode="income";
+const $=id=>document.getElementById(id), money=n=>"৳"+Number(n||0).toLocaleString("en-BD");
+function monthNow(){return new Date().toISOString().slice(0,7)}
+$("month").value=monthNow(); $("date").value=new Date().toISOString().slice(0,10);
+$("cat").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
+function persist(){localStorage.setItem("ff_v2",JSON.stringify(db));render()}
+function setMode(m){mode=m;$("incomeMode").className="btn "+(m==="income"?"soft":"");$("expenseMode").className="btn "+(m==="expense"?"soft":"");$("typeBox").style.display=m==="income"?"block":"none";$("catBox").style.display=m==="expense"?"block":"none"}
+function show(id,btn){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");render()}
+function addTx(){let a=+$("amount").value;if(!a)return alert("পরিমাণ লিখুন");let base={id:Date.now(),date:$("date").value,person:$("person").value,amount:a,note:$("note").value};if(mode==="income")db.income.push({...base,type:$("type").value});else db.expense.push({...base,cat:$("cat").value});$("amount").value="";$("note").value="";persist();alert("সংরক্ষণ হয়েছে")}
+function filtered(a){return a.filter(x=>x.date.startsWith($("month").value))}
+function render(){
+ let inc=filtered(db.income),exp=filtered(db.expense),ti=inc.reduce((s,x)=>s+x.amount,0),te=exp.reduce((s,x)=>s+x.amount,0),bal=ti-te;
+ $("incomeTotal").textContent=money(ti);$("expenseTotal").textContent=money(te);$("balance").textContent=money(bal);$("savingRate").textContent=(ti?((bal/ti)*100).toFixed(1):0)+"%";
+ let map={};exp.forEach(x=>map[x.cat]=(map[x.cat]||0)+x.amount);
+ $("cats").innerHTML=Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="catrow"><div class="cathead"><span>${c}</span><b>${money(v)}</b></div><div class="bar"><i style="width:${te?Math.min(100,v/te*100):0}%"></i></div></div>`).join("")||'<div class="empty">এই মাসে খরচের তথ্য নেই</div>';
+ let all=[...inc.map(x=>({...x,k:"income",title:x.note||x.type})),...exp.map(x=>({...x,k:"expense",title:x.cat}))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+ $("recent").innerHTML=all.length?all.map(x=>`<div class="tx"><div><b>${x.title}</b><small>${x.date} · ${x.person}</small></div><span class="amt ${x.k==="income"?"green":"red"}">${x.k==="income"?"+":"-"}${money(x.amount)}</span></div>`).join(""):'<div class="empty">কোনো লেনদেন নেই</div>';
+ let hc=inc.reduce((s,x)=>s+x.amount,0),ec=te;
+ $("reportBox").innerHTML=`<div class="cathead"><span>মোট আয়</span><b class="green">${money(hc)}</b></div><div class="cathead"><span>মোট খরচ</span><b class="red">${money(ec)}</b></div><div class="cathead" style="margin-top:10px"><span>সঞ্চয়/অবশিষ্ট</span><b class="blue">${money(hc-ec)}</b></div>`;
+ let pm={Husband:0,Wife:0,Joint:0};exp.forEach(x=>pm[x.person]+=x.amount);
+ $("peopleBox").innerHTML=Object.entries(pm).map(([p,v])=>`<div class="cathead" style="padding:8px 0"><span>${p}</span><b>${money(v)}</b></div>`).join("");
+ renderBudget(exp);
+}
+function renderBudget(exp){
+ $("budgetInputs").innerHTML=CATS.map(c=>`<label>${c}</label><input id="b_${encodeURIComponent(c)}" type="number" value="${db.budget[c]||""}" placeholder="৳">`).join("");
+ let a={};exp.forEach(x=>a[x.cat]=(a[x.cat]||0)+x.amount);
+ $("budgetReport").innerHTML=CATS.map(c=>{let b=+db.budget[c]||0,v=a[c]||0;if(!b&&!v)return "";let d=b-v;return `<div class="tx"><div><b>${c}</b><small>Actual ${money(v)} / Budget ${money(b)}</small></div><span class="amt ${d<0?"red":"green"}">${d<0?"Over ":"Left "}${money(Math.abs(d))}</span></div>`}).join("")||'<div class="empty">বাজেট সেট করুন</div>';
+}
+function saveBudget(){CATS.forEach(c=>db.budget[c]=+$("b_"+encodeURIComponent(c)).value||0);persist();alert("বাজেট সংরক্ষণ হয়েছে")}
+function backup(){let blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Family-Finance-Backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href)}
+function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.income||!x.expense)throw 0;db=x;persist();alert("Backup Restore সফল হয়েছে")}catch(_){alert("Backup ফাইলটি সঠিক নয়")}};r.readAsText(f)}
+function wipe(){if(confirm("সব হিসাব মুছে ফেলবেন? আগে Backup করে নিন।")){db={income:[],expense:[],budget:{}};persist()}}
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+render();
+</script>
+</body></html>

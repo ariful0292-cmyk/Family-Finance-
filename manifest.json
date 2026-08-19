@@ -1,0 +1,13 @@
+{
+  "name":"Family Finance Manager",
+  "short_name":"Family Finance",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f4f7f8",
+  "theme_color":"#0f766e",
+  "description":"A simple family income, expense, budget and backup manager.",
+  "icons":[
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
